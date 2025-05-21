@@ -1,0 +1,1 @@
+# shop-management-front-parcial-2
