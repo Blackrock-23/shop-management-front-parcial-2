@@ -220,10 +220,30 @@ function getUsers() {
         `;
 
             users.forEach(user => {
+                // Formatear el nombre completo del usuario
+                const fullName = user.name ? 
+                    (user.name.firstname && user.name.lastname ? 
+                        `${user.name.firstname} ${user.name.lastname}` : 
+                        (typeof user.name === 'string' ? user.name : 'Usuario sin nombre')
+                    ) : 'Usuario sin nombre';
+                
+                // Formatear el nombre para mostrar con la primera letra en mayúscula
+                const formattedName = fullName
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                
                 listUsers += `
                 <tr>
                     <td>${user.id}</td>
-                    <td>${user.name}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle me-2 bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border-radius: 50%;">
+                                <span class="initials text-primary">${formattedName.charAt(0)}</span>
+                            </div>
+                            <span>${formattedName}</span>
+                        </div>
+                    </td>
                     <td>${user.email}</td>
                     <td><span class="badge bg-primary">${user.role || 'Usuario'}</span></td>
                     <td>
@@ -386,14 +406,37 @@ function showUserDetails(userId) {
             return response.json();
         })
         .then(user => {
+            // Formatear el nombre completo del usuario
+            const fullName = user.name ? 
+                (user.name.firstname && user.name.lastname ? 
+                    `${user.name.firstname} ${user.name.lastname}` : 
+                    (typeof user.name === 'string' ? user.name : 'Usuario sin nombre')
+                ) : 'Usuario sin nombre';
+            
+            // Formatear el nombre para mostrar con la primera letra en mayúscula
+            const formattedName = fullName
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+                
+            // Obtener las iniciales para el avatar
+            const initials = formattedName.split(' ')
+                .map(word => word.charAt(0))
+                .join('')
+                .substring(0, 2);
+                
+            // Generar un color aleatorio para el avatar
+            const avatarColors = ['primary', 'success', 'info', 'warning', 'danger'];
+            const avatarColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+            
             // Mostrar detalles del usuario en el modal
             document.getElementById('detailsModalBody').innerHTML = `
             <div class="row">
                 <div class="col-md-4 text-center">
-                    <div class="bg-light rounded-circle mb-3 d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; margin: 0 auto;">
-                        <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
+                    <div class="bg-${avatarColor} text-white rounded-circle mb-3 d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; margin: 0 auto;">
+                        <span style="font-size: 3rem; font-weight: 500;">${initials}</span>
                     </div>
-                    <h5>${user.name}</h5>
+                    <h5>${formattedName}</h5>
                     <span class="badge bg-primary mb-3">${user.role || 'Usuario'}</span>
                 </div>
                 <div class="col-md-8">
@@ -892,37 +935,7 @@ function showProductDetails(productId) {
         });
 }
 
-// Función para crear una tarjeta de producto
-function createProductCard(product) {
-    return `
-    <div class="col product-card" data-category="${product.category.id}" data-price="${product.price}" data-name="${product.title.toLowerCase()}">
-        <div class="card h-100 shadow-sm">
-            <div class="position-relative">
-                <div class="card-img-container text-center p-3" style="height: 180px; display: flex; align-items: center; justify-content: center;">
-                    <img src="${product.images[0]}" class="card-img-top" style="max-height: 150px; object-fit: contain;" alt="${product.title}">
-                </div>
-                <span class="position-absolute top-0 end-0 badge bg-success m-2">$${product.price}</span>
-            </div>
-            <div class="card-body d-flex flex-column">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="badge bg-primary">${product.category.name}</span>
-                    <small class="text-muted">ID: ${product.id}</small>
-                </div>
-                <h5 class="card-title text-truncate" title="${product.title}">${product.title}</h5>
-                <p class="card-text flex-grow-1" style="font-size: 0.9rem;">${product.description.substring(0, 70)}${product.description.length > 70 ? '...' : ''}</p>
-                <div class="d-flex justify-content-between align-items-center mt-auto">
-                    <button class="btn btn-sm btn-outline-primary" onclick="showProductDetails(${product.id})">
-                        <i class="bi bi-eye me-1"></i>Ver detalles
-                    </button>
-                    <button class="btn btn-sm btn-success" onclick="addToCart(${product.id})">
-                        <i class="bi bi-cart-plus"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    `;
-}
+// Esta función ya no es necesaria porque la hemos integrado directamente en getProducts
 
 // Función para filtrar y ordenar productos
 function filterProducts() {
@@ -937,7 +950,7 @@ function filterProducts() {
     let filteredProducts = products.filter(product => {
         const matchesSearch = product.title.toLowerCase().includes(searchTerm) ||
             product.description.toLowerCase().includes(searchTerm);
-        const matchesCategory = categoryFilter === '' || product.category.id.toString() === categoryFilter;
+        const matchesCategory = categoryFilter === '' || product.category === categoryFilter;
 
         return matchesSearch && matchesCategory;
     });
@@ -974,7 +987,40 @@ function filterProducts() {
             </div>
             `;
         } else {
-            container.innerHTML = filteredProducts.map(product => createProductCard(product)).join('');
+            // Generar tarjetas de producto directamente
+            container.innerHTML = filteredProducts.map(product => {
+                // Asegurarse de que la descripción no sea demasiado larga
+                const shortDescription = product.description ?
+                    (product.description.length > 60 ? product.description.substring(0, 60) + '...' : product.description) :
+                    'Sin descripción';
+                
+                // Obtener la imagen o usar una imagen por defecto
+                const imageUrl = product.image || 'https://via.placeholder.com/150';
+                
+                // Generar un color aleatorio para el badge de categoría
+                const badgeColor = getRandomColor();
+                
+                return `
+                <div class="col">
+                    <div class="card h-100 shadow-sm product-card">
+                        <div class="position-relative">
+                            <img src="${imageUrl}" class="card-img-top p-3" style="height: 200px; object-fit: contain;" alt="${product.title}">
+                            <span class="position-absolute top-0 end-0 badge bg-${badgeColor} m-2">${product.category}</span>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-2">${product.title}</h5>
+                            <p class="card-text text-muted small mb-3">${shortDescription}</p>
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <span class="fw-bold text-success">$${product.price}</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showProductDetails(${product.id})">
+                                    <i class="bi bi-eye me-1"></i>Ver detalles
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
         }
     }
 }
@@ -1008,7 +1054,9 @@ function addToCart(productId) {
     // Obtener información del producto (si está disponible en la ventana global)
     let productInfo = '';
     if (window.allProducts) {
-        const product = window.allProducts.find(p => p.id === productId);
+        // Buscar el producto por ID en la lista global de productos
+        // FakeStoreAPI devuelve IDs como números, asegurarse de convertir para la comparación
+        const product = window.allProducts.find(p => p.id === productId || p.id === Number(productId));
         if (product) {
             productInfo = `<strong>${product.title}</strong>`;
         }
@@ -1043,6 +1091,32 @@ function addToCart(productId) {
         const currentCount = parseInt(cartCountBadge.textContent) || 0;
         cartCountBadge.textContent = currentCount + quantity;
         cartCountBadge.classList.remove('d-none');
+    }
+
+    // Opcional: Guardar el carrito en localStorage para persistencia
+    try {
+        // Obtener el carrito actual o crear uno nuevo
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        
+        // Buscar si el producto ya está en el carrito
+        const existingItem = cart.find(item => item.productId === productId);
+        
+        if (existingItem) {
+            // Si ya existe, incrementar la cantidad
+            existingItem.quantity += quantity;
+        } else {
+            // Si no existe, agregar el nuevo item
+            cart.push({
+                productId: productId,
+                quantity: quantity,
+                dateAdded: new Date().toISOString()
+            });
+        }
+        
+        // Guardar el carrito actualizado
+        localStorage.setItem('cart', JSON.stringify(cart));
+    } catch (error) {
+        console.error('Error al guardar el carrito:', error);
     }
 }
 
