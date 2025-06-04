@@ -186,15 +186,7 @@ function showUserDetails(userId) {
             </div>
         `;
     });
-    .catch(error => {
-        document.getElementById('info').innerHTML = `
-            <div class="alert alert-danger" role="alert">
-                <h4 class="alert-heading">Error al cargar el usuario</h4>
-                <p>${error.message || 'Ocurrió un error inesperado'}</p>
-                <button class="btn btn-primary" onclick="getUsers()">Volver a la lista</button>
-            </div>
-        `;
-    };
+
 }
 
 // Función para mostrar el formulario de edición de usuario
@@ -448,12 +440,6 @@ function updateUserCount() {
     })
     .catch(() => {
         if (document.getElementById('userCount')) {
-            document.getElementById('userCount').textContent = '0';
-        }
-    });
-}
-            csvContent += `${user.id},${user.first_name},${user.last_name},${user.email}\n`;
-        ;
         
         // Crear un blob y un enlace de descarga
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -481,8 +467,7 @@ function updateUserCount() {
         // Eliminar alerta después de 3 segundos
         setTimeout(() => {
             alertDiv.remove();
-        }, 3000);
-    .catch(error => {
+        }, 3000).catch(error => {
         // Mostrar mensaje de error
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
@@ -498,4 +483,5 @@ function updateUserCount() {
         setTimeout(() => {
             alertDiv.remove();
         }, 3000);
-    };
+    });
+}

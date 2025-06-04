@@ -1,5 +1,16 @@
-// URL base de la API
-const API_URL = 'https://fakestoreapi.com/products​';
+// Helper function to escape strings for HTML attributes
+function escapeStringForAttribute(str) {
+    if (typeof str !== 'string') {
+        return ''; 
+    }
+    return str
+        .replace(/\\/g, '\\\\')  // Must be first
+        .replace(/'/g, '\\\'')   // Escape single quotes
+        .replace(/"/g, '\\"')    // Escape double quotes
+        .replace(/`/g, '\\`')    // Escape backticks
+        .replace(/\n/g, '\\n')   // Escape newlines
+        .replace(/\r/g, '\\r');  // Escape carriage returns
+}
 
 // Función para obtener y mostrar productos con diseño mejorado
 function getProducts() {
@@ -55,22 +66,25 @@ function getProducts() {
             `;
             
             products.forEach(product => {
+                const escapedTitle = escapeStringForAttribute(product.title);
+                const categoryDisplay = escapeStringForAttribute(product.category); // API returns category as string
+
                 listProducts += `
                 <div class="col product-card" data-product-id="${product.id}">
                     <div class="card h-100 shadow-sm">
                         <div class="card-img-top text-center p-3">
-                            <img src="${product.images[0]}" alt="${product.title}" class="img-fluid" style="max-height: 150px; object-fit: contain;">
+                            <img src="${product.image}" alt="${escapedTitle}" class="img-fluid" style="max-height: 150px; object-fit: contain;">
                         </div>
                         <div class="card-body">
                             <h5 class="card-title">${product.title}</h5>
                             <p class="card-text text-truncate">${product.description}</p>
                             <p class="card-text"><span class="badge bg-primary">$${product.price}</span></p>
-                            <p class="card-text"><span class="badge bg-secondary">${product.category.name}</span></p>
+                            <p class="card-text"><span class="badge bg-secondary">${categoryDisplay}</span></p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <button class="btn btn-sm btn-outline-primary" onclick="showProductDetails(${product.id})">
                                     <i class="bi bi-eye me-1"></i>Ver detalles
                                 </button>
-                                <button class="btn btn-sm btn-outline-success" onclick="addToFavorites(${product.id}, '${product.title}')">
+                                <button class="btn btn-sm btn-outline-success" onclick="addToFavorites(${product.id}, '${escapedTitle}')">
                                     <i class="bi bi-heart"></i>
                                 </button>
                             </div>
@@ -98,17 +112,19 @@ function getProducts() {
             `;
             
             products.forEach(product => {
+                const escapedTitle = escapeStringForAttribute(product.title);
+                const categoryDisplay = escapeStringForAttribute(product.category); // API returns category as string
+
                 listProducts += `
                 <tr>
                     <td>${product.id}</td>
-                    <td><img src="${product.images[0]}" alt="${product.title}" width="50" height="50" class="rounded"></td>
+                    <td><img src="${product.image}" alt="${escapedTitle}" width="50" height="50" class="rounded"></td>
                     <td>${product.title}</td>
                     <td>$${product.price}</td>
-                    <td><span class="badge bg-secondary">${product.category.name}</span></td>
+                    <td><span class="badge bg-secondary">${categoryDisplay}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="showProductDetails(${product.id})">
-                            <i class="bi bi-eye"></i> Ver
-                        </button>
+                        <button class='btn btn-sm btn-outline-primary me-1' onclick="showProductDetails(${product.id})"><i class='bi bi-eye'></i></button>
+                        <button class='btn btn-sm btn-outline-success' onclick="addToFavorites(${product.id}, '${escapedTitle}')"><i class='bi bi-heart'></i></button>
                     </td>
                 </tr>
                 `;
@@ -133,11 +149,12 @@ function getProducts() {
 
     })
     .catch(error => {
+        console.error('Error en getProducts:', error);
         document.getElementById('info').innerHTML = `
             <div class="alert alert-danger" role="alert">
                 <h4 class="alert-heading">Error al cargar productos</h4>
-                <p>${error.message || 'Ocurrió un error inesperado'}</p>
-                <button class="btn btn-primary" onclick="showWelcomeMessage()">Volver al inicio</button>
+                <p>${error.message}</p>
+                <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">Volver</button>
             </div>
         `;
     });
@@ -199,24 +216,8 @@ function showProductDetails(productId) {
         document.getElementById('detailsModalBody').innerHTML = `
             <div class="row">
                 <div class="col-md-5 text-center mb-3">
-                    <div id="productImageCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            ${product.images.map((img, index) => `
-                                <div class="carousel-item ${index === 0 ? 'active' : ''}">
-                                    <img src="${img}" class="d-block w-100 rounded" alt="${product.title}" style="max-height: 250px; object-fit: contain;">
-                                </div>
-                            `).join('')}
-                        </div>
-                        ${product.images.length > 1 ? `
-                            <button class="carousel-control-prev" type="button" data-bs-target="#productImageCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Anterior</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#productImageCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Siguiente</span>
-                            </button>
-                        ` : ''}
+                    <div id="productImageContainer">
+                        <img src="${product.image}" class="d-block w-100" alt="${product.title}" style="max-height: 300px; object-fit: contain;">
                     </div>
                 </div>
                 <div class="col-md-7">

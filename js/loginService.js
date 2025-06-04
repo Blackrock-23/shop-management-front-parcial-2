@@ -33,107 +33,66 @@ document.getElementById("formLogin").addEventListener('submit', function (e) {
 function login(username, password) {
     let message = '';
     let alertType = '';
-    
+
     // Limpiar cualquier token anterior
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
+
     // Mostrar indicador de carga
     document.getElementById('loginBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Iniciando sesión...';
     document.getElementById('loginBtn').disabled = true;
-    
-    // Intentar login con la Fake Store API
-    fetch("https://api.escuelajs.co/api/v1/auth/login", {
-        method: "POST",
-        headers: {
-            "Content-type": "application/json"
-        },
-        body: JSON.stringify({ email: username + '@mail.com', password })
-    })
-    .then((response) => {
-        if (response.ok) {
-            return response.json().then((data) => {
+
+    // Intentar login con FakeStoreAPI users
+    fetch("https://fakestoreapi.com/users")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al obtener la lista de usuarios. Código: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(users => {
+            const foundUser = users.find(user => user.username === username && user.password === password);
+
+            if (foundUser) {
                 // Login exitoso
                 alertType = 'success';
-                message = 'Inicio de sesión exitoso';
+                message = 'Inicio de sesión exitoso.';
                 alertBuilder(alertType, message);
-                
-                // Guardar token en localStorage
-                localStorage.setItem('token', data.access_token);
-                
-                // Obtener información del usuario
-                return fetch("https://api.escuelajs.co/api/v1/auth/profile", {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${data.access_token}`
-                    }
-                });
-            })
-            .then(response => {
-                if (response && response.ok) {
-                    return response.json();
-                }
-                throw new Error('No se pudo obtener el perfil');
-            })
-            .then(userData => {
-                // Guardar datos del usuario
-                localStorage.setItem('user', JSON.stringify(userData));
-                
+
+                const userToStore = {
+                    id: foundUser.id,
+                    email: foundUser.email,
+                    name: `${foundUser.name.firstname} ${foundUser.name.lastname}`,
+                    username: foundUser.username,
+                    role: 'customer', // Rol predeterminado
+                    avatar: `https://i.pravatar.cc/150?u=${foundUser.username}` // Avatar genérico basado en username
+                };
+                localStorage.setItem('user', JSON.stringify(userToStore));
+                localStorage.setItem('token', `fake-token-for-${foundUser.username}`); // Token simulado
+
                 // Redireccionar al dashboard
                 setTimeout(() => {
                     location.href = 'admin/dashboard.html';
                 }, 1500);
-            });
-        } else {
-            // Login fallido
+            } else {
+                // Login fallido
+                alertType = 'danger';
+                message = 'Usuario o contraseña incorrectos.';
+                alertBuilder(alertType, message);
+
+                document.getElementById('loginBtn').innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión';
+                document.getElementById('loginBtn').disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error en login:', error);
             alertType = 'danger';
-            message = 'Correo o contraseña incorrectos.';
+            message = error.message || 'Ocurrió un error al intentar iniciar sesión. Por favor, intente más tarde.';
             alertBuilder(alertType, message);
-            
-            // Restaurar botón
+
             document.getElementById('loginBtn').innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión';
             document.getElementById('loginBtn').disabled = false;
-            
-            return Promise.reject('Credenciales inválidas');
-        }
-    })
-    .catch((error) => {
-        console.error('Error en login:', error);
-        
-        // Para fines de la actividad práctica, permitimos un login simulado
-        // si la API no está disponible o hay algún error
-        if (username === 'jhonde' && password === 'changeme') {
-            alertType = 'success';
-            message = 'Inicio de sesión simulado exitoso';
-            alertBuilder(alertType, message);
-            
-            // Crear datos simulados
-            const mockUser = {
-                id: 1,
-                email: 'jhonde@mail.com',
-                name: 'John Doe',
-                role: 'customer',
-                avatar: 'https://api.escuelajs.co/api/v1/files/e5e87890-15ad-4051-8339-913a0c3b6424.jpg'
-            };
-            
-            // Guardar datos simulados
-            localStorage.setItem('token', 'mock-token-12345');
-            localStorage.setItem('user', JSON.stringify(mockUser));
-            
-            // Redireccionar al dashboard
-            setTimeout(() => {
-                location.href = 'admin/dashboard.html';
-            }, 1500);
-        } else {
-            alertType = 'danger';
-            message = 'Error en el servidor. Intente más tarde o use las credenciales de prueba.';
-            alertBuilder(alertType, message);
-            
-            // Restaurar botón
-            document.getElementById('loginBtn').innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión';
-            document.getElementById('loginBtn').disabled = false;
-        }
-    })
+        });
 }
 
 function alertBuilder(alertType, message) {
@@ -146,15 +105,16 @@ function alertBuilder(alertType, message) {
     document.getElementById('alert').innerHTML = alert;
 }
 
-// Mostrar información de credenciales de prueba
+// Mostrar información sobre las credenciales
 document.addEventListener('DOMContentLoaded', function() {
     const credentialsInfo = document.getElementById('credentialsInfo');
     if (credentialsInfo) {
         credentialsInfo.innerHTML = `
             <div class="alert alert-info py-2">
-                <p class="small mb-0">Para pruebas, usa: <br>
-                    <code>jhonde</code> / <code>changeme</code>
+                <p class="small mb-0">Puedes iniciar sesión con cualquier usuario de 
+                    <a href="https://fakestoreapi.com/users" target="_blank" rel="noopener noreferrer">FakeStoreAPI Users</a>.
                 </p>
+                <p class="small mb-0">Ej: <code>mor_2314</code> / <code>83r5^_</code></p>
             </div>
         `;
     }

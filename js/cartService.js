@@ -1,6 +1,3 @@
-// URL base de la API
-const API_URL = 'https://fakestoreapi.com';
-
 // Contador para el dashboard
 let cartCount = 0;
 
